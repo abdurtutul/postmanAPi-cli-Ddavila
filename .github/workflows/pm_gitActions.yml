@@ -17,9 +17,9 @@ jobs:
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
-      - name: Run API tests (ignore exit code for known API bugs)
+      - name: Run API tests (ignore failures temporarily)
         run: |
-          postman collection run "22742638-ea71aa41-da7d-4e39-9c50-cecf8b6cfe33" --ignore-exit-code
+          postman collection run "22742638-ea71aa41-da7d-4e39-9c50-cecf8b6cfe33" || true
 
       - name: Logout from Postman CLI
         run: postman logout
