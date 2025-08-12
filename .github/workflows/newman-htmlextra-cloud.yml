@@ -1,0 +1,70 @@
+name: Newman HTML Report (fetch from Postman Cloud and publish)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  newman-cloud-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Required for pushing to gh-pages
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Newman + HTML Extra reporter
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+
+      - name: Fetch Postman collection from Postman Cloud
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+        run: |
+          COLLECTION_UID="22742638-ea71aa41-da7d-4e39-9c50-cecf8b6cfe33"
+          curl -s -H "X-Api-Key: $POSTMAN_API_KEY" \
+            "https://api.getpostman.com/collections/$COLLECTION_UID" \
+            -o raw_collection.json
+          jq '.collection' raw_collection.json > collection.json
+
+      # Optional: fetch Postman environment if you want to use it
+      # - name: Fetch Postman environment from Postman Cloud
+      #   env:
+      #     POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+      #   run: |
+      #     ENV_UID="your-env-uid"
+      #     curl -s -H "X-Api-Key: $POSTMAN_API_KEY" \
+      #       "https://api.getpostman.com/environments/$ENV_UID" \
+      #       -o raw_env.json
+      #     jq '.environment' raw_env.json > env.json
+
+      - name: Run Newman with HTML Extra report
+        run: |
+          mkdir -p report
+          # If you have env.json, add: newman run collection.json -e env.json ...
+          newman run collection.json \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export newman-report.html \
+            --reporter-htmlextra-title "API Test Report" \
+            --reporter-htmlextra-darkTheme || true
+          mv newman-report.html report/newman-report.html || true
+
+      - name: Upload HTML report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-html-report
+          path: report/newman-report.html
+
+      - name: Deploy report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./report
+          publish_branch: gh-pages
