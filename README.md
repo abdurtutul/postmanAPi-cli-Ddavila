@@ -24,7 +24,7 @@ This repository contains automated API tests for the **Ddavila** project, focusi
 ---
 ## HTML Report Screenshot
 
-![Newman HTML Extra Report Screenshot](./docs/newman-report-screenshot.png)  
+![Newman HTML Extra Report Screenshot](Screenshot_1.png)  
 *This screenshot shows the detailed test summary, assertions, and response timings from the Newman HTML Extra report.*
 
 ---
